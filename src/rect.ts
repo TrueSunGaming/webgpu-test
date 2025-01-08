@@ -1,7 +1,8 @@
 import { canvas, canvasFormat, device, render } from "./canvas";
 import rectShader from "./rect.wgsl?raw";
+import { createBindGroup, createUniformBuffer } from "./uniform";
 
-export function renderRect(pass: GPURenderPassEncoder, x: number, y: number, width: number, height: number, fill: GPUColor): void {
+export function renderRect(pass: GPURenderPassEncoder, x: number, y: number, width: number, height: number, fill: [number, number, number, number]): void {
     const scaledWidth: number = width / canvas.clientWidth;
     const scaledHeight: number = height / canvas.clientHeight;
     const scaledX: number = x / canvas.clientWidth;
@@ -34,21 +35,21 @@ export function renderRect(pass: GPURenderPassEncoder, x: number, y: number, wid
         }],
     };
 
-    const cellShaderModule: GPUShaderModule = device.createShaderModule({
+    const rectShaderModule: GPUShaderModule = device.createShaderModule({
         label: "Rect shader",
         code: rectShader
     });
 
-    const cellPipeline: GPURenderPipeline = device.createRenderPipeline({
-        label: "Cell pipeline",
+    const pipeline: GPURenderPipeline = device.createRenderPipeline({
+        label: "Rect pipeline",
         layout: "auto",
         vertex: {
-            module: cellShaderModule,
+            module: rectShaderModule,
             entryPoint: "vertexMain",
             buffers: [vertexBufferLayout]
         },
         fragment: {
-            module: cellShaderModule,
+            module: rectShaderModule,
             entryPoint: "fragmentMain",
             targets: [{
                 format: canvasFormat
@@ -56,7 +57,24 @@ export function renderRect(pass: GPURenderPassEncoder, x: number, y: number, wid
         }
     });
 
-    pass.setPipeline(cellPipeline);
+    const uniformBuffer: GPUBuffer = createUniformBuffer(
+        "Rect uniform buffer",
+        new Float32Array(fill),
+        0
+    );
+
+    pass.setPipeline(pipeline);
     pass.setVertexBuffer(0, vertexBuffer);
+
+    pass.setBindGroup(0, createBindGroup(
+        0,
+        "Rect bind group",
+        pipeline,
+        [{
+            binding: 0,
+            resource: { buffer: uniformBuffer }
+        }]
+    ));
+
     pass.draw(vertices.length / 2);
 }

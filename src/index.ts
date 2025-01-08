@@ -4,6 +4,6 @@ import { renderRect } from "./rect";
 
 const pass: GPURenderPassEncoder = clear();
 
-//renderRect(pass, 0, 0, 100, 100, { r: 1, g: 1, b: 0, a: 1 });
+renderRect(pass, 0, 0, 100, 100, [1, 1, 0, 1]);
 
 render(pass);
